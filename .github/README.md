@@ -102,7 +102,7 @@ usage: ./wireguard-manager.sh <command>
 - Backup & Restore WireGuard
 - (IPv4|IPv6) Supported, Leak Protection
 - Variety of Public DNS to be pushed to the peers
-- Choice to use a self-hosted resolver with Unbound **Prevent DNS Leaks, DNSSEC Supported**
+- Choice to use a self-hosted resolver with Coredns **Prevent DNS Leaks, DNSSEC Supported**
 - Iptables rules and forwarding managed in a seamless way
 - Remove & Uninstall WireGuard Interface
 - Preshared-key for an extra layer of security. **Required**
@@ -119,10 +119,8 @@ usage: ./wireguard-manager.sh <command>
 * `DISABLE_HOST` - Disable or enable ipv4 and ipv6, default disabled
 * `CLIENT_ALLOWED_IP` - private or public IP range allowed in the tunnel
 * `NAT_CHOICE` - Keep sending packets to keep the tunnel alive `25`
-* `INSTALL_UNBOUND` - Install unbound with a basic `y/n`
-* `UNINSTALL_UNBOUND` - Uninstall unbound with `y/n`
 * `REMOVE_WIREGUARD` - Uninstall WireGuard with `y/n`
-* `DNS_CHOICE` - Without Unbound you have to use a public dns like `8.8.8.8`
+* `DNS_CHOICE` - Without Coredns you have to use a public dns like `8.8.8.8`
 * `CLIENT_NAME` - Name the first peer from wireguard
 * `MTU_CHOICE` - MTU the peer will use `1420`
 
