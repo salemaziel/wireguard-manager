@@ -990,16 +990,16 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
 
   # Install WireGuard Server
   install-wireguard-server
-  
+
   function install-coredns-server() {
     if [ -f "${WIREGUARD_INTERFACE}" ]; then
       if [ "${INSTALL_COREDNS}" = "y" ]; then
         if [ ! -x "$(command -v coredns)" ]; then
           # Download Coredns
           mkdir -P ${COREDNS_ROOT}
-        # Coredns Config
-        if [ "${INSTALL_BLOCK_LIST}" = "y" ]; then
-          echo ". {
+          # Coredns Config
+          if [ "${INSTALL_BLOCK_LIST}" = "y" ]; then
+            echo ". {
     bind 127.0.0.1 ::1
     acl {
         allow net 127.0.0.1 ${IPV4_SUBNET} ${IPV6_SUBNET}
@@ -1019,8 +1019,8 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     minimal
     reload
 }" >>${COREDNS_CONFIG}
-else
-          echo ". {
+          else
+            echo ". {
     bind 127.0.0.1 ::1
     acl {
         allow net 127.0.0.1 ${IPV4_SUBNET} ${IPV6_SUBNET}
@@ -1037,7 +1037,7 @@ else
     minimal
     reload
 }" >>${COREDNS_CONFIG}
-fi
+          fi
           curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
           sed -i -e 's/^/0.0.0.0 /' ${COREDNS_HOSTFILE}
           if [ -f "${RESOLV_CONFIG}" ]; then
