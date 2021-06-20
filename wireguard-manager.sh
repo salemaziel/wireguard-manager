@@ -998,7 +998,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
           echo ". {
     bind 127.0.0.1 ::1
     acl {
-        allow net 127.0.0.1
+        allow net 127.0.0.1 ${IPV4_SUBNET} ${IPV6_SUBNET}
         block
     }
     hosts {
