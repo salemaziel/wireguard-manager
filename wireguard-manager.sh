@@ -997,7 +997,8 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
         if [ ! -x "$(command -v coredns)" ]; then
           # Download Coredns
           mkdir -P ${COREDNS_ROOT}
-          # Coredns Config
+        # Coredns Config
+        if [ "${INSTALL_BLOCK_LIST}" = "y" ]; then
           echo ". {
     bind 127.0.0.1 ::1
     acl {
@@ -1018,8 +1019,27 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     minimal
     reload
 }" >>${COREDNS_CONFIG}
+else
+          echo ". {
+    bind 127.0.0.1 ::1
+    acl {
+        allow net 127.0.0.1 ${IPV4_SUBNET} ${IPV6_SUBNET}
+        block
+    }
+    forward . tls://1.1.1.1 tls://1.0.0.1 {
+        tls_servername cloudflare-dns.com
+        health_check 5s
+    }
+    any
+    errors
+    loop
+    cache
+    minimal
+    reload
+}" >>${COREDNS_CONFIG}
+fi
           curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
-          sed -i -e "s/^/0.0.0.0 /" ${COREDNS_HOSTFILE}
+          sed -i -e 's/^/0.0.0.0 /' ${COREDNS_HOSTFILE}
           if [ -f "${RESOLV_CONFIG}" ]; then
             chattr -i ${RESOLV_CONFIG}
             mv ${RESOLV_CONFIG} ${RESOLV_CONFIG_OLD}
@@ -1030,8 +1050,8 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
             echo "nameserver 127.0.0.1" >>${RESOLV_CONFIG}
             echo "nameserver ::1" >>${RESOLV_CONFIG}
           fi
+          echo "Coredns: true" >>${COREDNS_MANAGER}
         fi
-        echo "Coredns: true" >>${COREDNS_MANAGER}
       fi
     fi
   }
@@ -1355,7 +1375,6 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
             fi
           fi
         fi
-        fi
         # Delete WireGuard backup
         if [ -f "${WIREGUARD_CONFIG_BACKUP}" ]; then
           read -rp "Are you sure you want to remove WireGuard backup? (y/n): " -n 1 -r
@@ -1384,7 +1403,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
         # Update coredns list
         if [ -f "${COREDNS_MANAGER}" ]; then
           curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
-          sed -i -e "s/^/0.0.0.0 /" ${COREDNS_HOSTFILE}
+          sed -i -e 's/^/0.0.0.0 /' "${COREDNS_HOSTFILE}"
         fi
         ;;
       10) # Backup WireGuard Config
