@@ -119,6 +119,7 @@ RESOLV_CONFIG_OLD="${RESOLV_CONFIG}.old"
 COREDNS_ROOT="/etc/coredns"
 COREDNS_CONFIG="${COREDNS_ROOT}/Corefile"
 COREDNS_HOSTFILE="${COREDNS_ROOT}/host"
+COREDNS_MANAGER="${COREDNS_ROOT}/wireguard-manager"
 CONTENT_BLOCKER_URL="https://raw.githubusercontent.com/complexorganizations/content-blocker/main/configs/hosts"
 
 # Verify that it is an old installation or another installer
@@ -995,7 +996,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       if [ "${INSTALL_COREDNS}" = "y" ]; then
         if [ ! -x "$(command -v coredns)" ]; then
           # Download Coredns
-          
+          mkdir -P ${COREDNS_ROOT}
           # Coredns Config
           echo ". {
     bind 127.0.0.1 ::1
@@ -1029,6 +1030,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
             echo "nameserver ::1" >>${RESOLV_CONFIG}
           fi
         fi
+        echo "Coredns: true" >>${COREDNS_MANAGER}
       fi
     fi
   }
