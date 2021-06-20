@@ -1019,6 +1019,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     reload
 }" >>${COREDNS_CONFIG}
           curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
+          sed -i -e "s/^/0.0.0.0 /" ${COREDNS_HOSTFILE}
           if [ -f "${RESOLV_CONFIG}" ]; then
             chattr -i ${RESOLV_CONFIG}
             mv ${RESOLV_CONFIG} ${RESOLV_CONFIG_OLD}
@@ -1379,6 +1380,11 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
             curl -o "${CURRENT_FILE_PATH}" ${WIREGUARD_MANAGER_UPDATE}
             chmod +x "${CURRENT_FILE_PATH}" || exit
           fi
+        fi
+        # Update coredns list
+        if [ -f "${COREDNS_MANAGER}" ]; then
+          curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
+          sed -i -e "s/^/0.0.0.0 /" ${COREDNS_HOSTFILE}
         fi
         ;;
       10) # Backup WireGuard Config
