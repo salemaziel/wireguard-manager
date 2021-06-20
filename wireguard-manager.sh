@@ -116,6 +116,8 @@ WIREGUARD_BACKUP_PASSWORD_PATH="${HOME}/.wireguard-manager"
 WIREGUARD_IP_FORWARDING_CONFIG="/etc/sysctl.d/wireguard.conf"
 RESOLV_CONFIG="/etc/resolv.conf"
 RESOLV_CONFIG_OLD="${RESOLV_CONFIG}.old"
+COREDNS_ROOT="/etc/coredns"
+COREDNS_CONFIG="${COREDNS_ROOT}/Corefile"
 
 # Verify that it is an old installation or another installer
 function previous-wireguard-installation() {
@@ -985,6 +987,49 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
 
   # Install WireGuard Server
   install-wireguard-server
+  
+  function install-coredns-server() {
+    if [ -f "${WIREGUARD_INTERFACE}" ]; then
+      if [ "${INSTALL_COREDNS}" = "y" ]; then
+        if [ ! -x "$(command -v coredns)" ]; then
+          # Download Coredns
+          
+          # Coredns Config
+          echo ". {
+    bind 127.0.0.1 ::1
+    acl {
+        allow net 127.0.0.1
+        block
+    }
+    hosts {
+        reload 24h
+        fallthrough
+    }
+    forward . tls://1.1.1.1 tls://1.0.0.1 {
+        tls_servername cloudflare-dns.com
+        health_check 5s
+    }
+    any
+    errors
+    loop
+    cache
+    minimal
+    reload
+}" >>${COREDNS_CONFIG}
+          if [ -f "${RESOLV_CONFIG}" ]; then
+            chattr -i ${RESOLV_CONFIG}
+            mv ${RESOLV_CONFIG} ${RESOLV_CONFIG_OLD}
+            echo "nameserver 127.0.0.1" >>${RESOLV_CONFIG}
+            echo "nameserver ::1" >>${RESOLV_CONFIG}
+            chattr +i ${RESOLV_CONFIG}
+          else
+            echo "nameserver 127.0.0.1" >>${RESOLV_CONFIG}
+            echo "nameserver ::1" >>${RESOLV_CONFIG}
+          fi
+        fi
+      fi
+    fi
+  }
 
   # Install WireGuard manager config
   function install-wireguard-manager-file() {
