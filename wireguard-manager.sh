@@ -118,6 +118,8 @@ RESOLV_CONFIG="/etc/resolv.conf"
 RESOLV_CONFIG_OLD="${RESOLV_CONFIG}.old"
 COREDNS_ROOT="/etc/coredns"
 COREDNS_CONFIG="${COREDNS_ROOT}/Corefile"
+COREDNS_HOSTFILE="${COREDNS_ROOT}/host"
+CONTENT_BLOCKER_URL="https://raw.githubusercontent.com/complexorganizations/content-blocker/main/configs/hosts"
 
 # Verify that it is an old installation or another installer
 function previous-wireguard-installation() {
@@ -1001,8 +1003,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
         allow net 127.0.0.1 ${IPV4_SUBNET} ${IPV6_SUBNET}
         block
     }
-    hosts {
-        reload 24h
+    hosts ${COREDNS_HOSTFILE} {
         fallthrough
     }
     forward . tls://1.1.1.1 tls://1.0.0.1 {
@@ -1016,6 +1017,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     minimal
     reload
 }" >>${COREDNS_CONFIG}
+          curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
           if [ -f "${RESOLV_CONFIG}" ]; then
             chattr -i ${RESOLV_CONFIG}
             mv ${RESOLV_CONFIG} ${RESOLV_CONFIG_OLD}
