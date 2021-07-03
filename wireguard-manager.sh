@@ -1583,19 +1583,20 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
             echo "Error: While attempting to locate your IP address, an error occurred."
             exit
           fi
-          sed -i "s/${SERVER_HOST}/${SERVER_HOST}/g" ${WIREGUARD_CONFIG}
+          sed -i "s/${SERVER_HOST}/${SERVER_HOST_V4}/g" ${WIREGUARD_CONFIG}
         fi
         ;;
       14)
         if [ -f "${WIREGUARD_INTERFACE}" ]; then
           # Find the server port and than change it.
-          until [[ "${SERVER_PORT}" =~ ^[0-9]+$ ]] && [ "${SERVER_PORT}" -ge 1 ] && [ "${SERVER_PORT}" -le 65535 ]; do
-            read -rp "Custom port [1-65535]: " -e -i 51820 SERVER_PORT
+          until [[ "${SERVER_PORT_NEW}" =~ ^[0-9]+$ ]] && [ "${SERVER_PORT_NEW}" -ge 1 ] && [ "${SERVER_PORT_NEW}" -le 65535 ]; do
+            read -rp "Custom port [1-65535]: " -e -i 51820 SERVER_PORT_NEW
           done
-          if [ "$(lsof -i UDP:"${SERVER_PORT}")" ]; then
-            echo "Error: The port ${SERVER_PORT} is already used by a different application, please use a different port."
+          if [ "$(lsof -i UDP:"${SERVER_PORT_NEW}")" ]; then
+            echo "Error: The port ${SERVER_PORT_NEW} is already used by a different application, please use a different port."
             exit
           fi
+          sed -i "s/${SERVER_PORT}/${SERVER_PORT_NEW}/g" ${WIREGUARD_CONFIG}
         fi
         ;;
       esac
