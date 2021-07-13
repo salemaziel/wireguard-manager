@@ -1087,6 +1087,7 @@ Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target" >>${COREDNS_SERVICE_FILE}
+systemctl daemon-reload
 fi
           if [ -f "${RESOLV_CONFIG}" ]; then
             chattr -i ${RESOLV_CONFIG}
