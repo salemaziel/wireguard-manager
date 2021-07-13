@@ -117,9 +117,11 @@ WIREGUARD_IP_FORWARDING_CONFIG="/etc/sysctl.d/wireguard.conf"
 RESOLV_CONFIG="/etc/resolv.conf"
 RESOLV_CONFIG_OLD="${RESOLV_CONFIG}.old"
 COREDNS_ROOT="/etc/coredns"
+COREDNS_BUILD="${COREDNS_ROOT}/coredns"
 COREDNS_CONFIG="${COREDNS_ROOT}/Corefile"
 COREDNS_HOSTFILE="${COREDNS_ROOT}/host"
 COREDNS_MANAGER="${COREDNS_ROOT}/wireguard-manager"
+COREDNS_SERVICE_FILE="/etc/systemd/system/coredns.service"
 CONTENT_BLOCKER_URL="https://raw.githubusercontent.com/complexorganizations/content-blocker/main/configs/hosts"
 
 # Verify that it is an old installation or another installer
@@ -1052,6 +1054,8 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     minimal
     reload
 }" >>${COREDNS_CONFIG}
+          curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
+          sed -i -e "s/^/0.0.0.0 /" ${COREDNS_HOSTFILE}
           else
             echo ". {
     bind 127.0.0.1 ::1
@@ -1071,8 +1075,19 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     reload
 }" >>${COREDNS_CONFIG}
           fi
-          curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
-          sed -i -e 's/^/0.0.0.0 /' ${COREDNS_HOSTFILE}
+          if [ ! -f "${COREDNS_SERVICE_FILE}" ]; then
+          echo "[Unit]
+Description=CoreDNS DNS server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=${COREDNS_BUILD} -conf=${COREDNS_CONFIG}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target" >>${COREDNS_SERVICE_FILE}
+fi
           if [ -f "${RESOLV_CONFIG}" ]; then
             chattr -i ${RESOLV_CONFIG}
             mv ${RESOLV_CONFIG} ${RESOLV_CONFIG_OLD}
