@@ -36,13 +36,13 @@ WireGuard is a straightforward yet fast and modern VPN that utilizes state-of-th
 
 ---
 ### 🌲 Prerequisite
-- CentOS, Debian, Ubuntu, Arch, Fedora, Redhat, Raspbian, PopOS, Manjaro, Kali, Alpine, Mint, FreeBSD
+- CentOS, Debian, Ubuntu, Arch, Fedora, Redhat, Raspbian, PopOS, Manjaro, Kali, Alpine, Mint, FreeBSD, Neon
 - Linux `Kernel 3.1` or newer
 - You will need superuser access or a user account with `sudo` privilege.
 - Docker `Kernel 5.6` or newer
 
 ---
-### 📲 Installation
+### 🐧 Installation
 #### Instance Installation
 Lets first use `curl` and save the file in `/usr/local/bin/`
 ```
@@ -59,9 +59,14 @@ bash /usr/local/bin/wireguard-manager.sh
 
 In your `/etc/wireguard/clients` directory, you will have `.conf` files. These are the peer configuration files. Download them from your WireGuard Interface and connect using your favorite WireGuard Peer.
 
-#### Docker Installation
+#### 🐳 Docker Installation
+Let's download the docker file and construct it from there.
 ```
-docker build -t wireguard https://raw.githubusercontent.com/complexorganizations/wireguard-manager/main/Dockerfile
+docker build -t wireguard-manager https://raw.githubusercontent.com/complexorganizations/wireguard-manager/main/Dockerfile
+```
+Let's start by constructing the docker container and then connecting to it.
+```
+docker run -it --name wireguard-manager-running wireguard-manager
 ```
 
 ---
@@ -102,7 +107,7 @@ usage: ./wireguard-manager.sh <command>
 - Backup & Restore WireGuard
 - (IPv4|IPv6) Supported, Leak Protection
 - Variety of Public DNS to be pushed to the peers
-- Choice to use a self-hosted resolver with Coredns **Prevent DNS Leaks, DNSSEC Supported**
+- Choice to use a self-hosted resolver with Unbound **Prevent DNS Leaks, DNSSEC Supported**
 - Iptables rules and forwarding managed in a seamless way
 - Remove & Uninstall WireGuard Interface
 - Preshared-key for an extra layer of security. **Required**
@@ -209,6 +214,21 @@ Are there any good alternative to self-hosting vpn?
 Why is all the code in one place?
 - Consider a remote control, you can have thirty different remotes each doing a different job, or you may have a single remote that does everything.
 
+What is the best way to connect to a running docker container?
+- `docker exec -it wireguard-manager-running /bin/bash`
+
+Why is `kernel 5.6` or above only required for Docker?
+- Wireguard requires kernel 5.6 or above to install due to linux headers, and we can't install kernel headers on the host OS using the script.
+
+Which port do I need to forward for wireguard, and which protocol should I use?
+- On the udp protocol, either the port of your choice or the default port of `51820` must be forwarded.
+
+For unbound, which ports do I need to forward?
+- Because all DNS traffic is routed through the vpn, you don't need to forward those ports `53`.
+
+What is blocked if I enable the content blocker?
+- Advertisement, Tracking, malware, and phishing are all prohibited.
+
 Official Links
 - Homepage: https://www.wireguard.com
 - Install: https://www.wireguard.com/install/
@@ -217,16 +237,22 @@ Official Links
 - Whitepaper: https://www.wireguard.com/papers/wireguard.pdf
 
 ---
+### 🙅 No Content-Blocking vs. Content-Blocking
+https://user-images.githubusercontent.com/16564273/125283630-9845d180-e2e6-11eb-8b7d-f30a8f2eae8a.mp4
+
+---
 ### 📐 Architecture
-![image](https://user-images.githubusercontent.com/16564273/103967799-bb71a780-5130-11eb-8462-69e728e1fd95.png)
+![image](https://raw.githubusercontent.com/complexorganizations/wireguard-manager/main/assets/Wireguard-Manager.png)
 
 ---
 ### 🤝 Developing
-Using a browser based development environment:
+Developing the code without having to clone the repository
 
-[![Open in Gitpod](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/complexorganizations/wireguard-manager)
+[![Open in Visual Studio Code](https://open.vscode.dev/badges/open-in-vscode.svg)](https://open.vscode.dev/complexorganizations/wireguard-manager)
 
 ### 🐛 Debugging
+After cloning the repo, Then start debugging the code.
+
 ```
 git clone https://github.com/complexorganizations/wireguard-manager /usr/local/bin/
 bash -x /usr/local/bin/wireguard-manager.sh >> /usr/local/bin/wireguard-manager.log
@@ -261,9 +287,24 @@ Give a ⭐️ and 🍴 if this project helped you!
 - LTC : `MVwkmnnaLDq7UccDeudcpQYwFnnDwDxxmq`
 - XRP : `rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg (1790476900)`
 
----
+---	
 ### ❤️ Credits
 Open Source Community
+
+---
+### 🤝 Sponsors
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="middle">
+        <a href="https://m.do.co/c/fb46acb2b3b1" target="_blank">
+          <img width="200px" src="https://raw.githubusercontent.com/complexorganizations/wireguard-manager/main/assets/digitalocean.png">
+        </a>
+      </td>
+      </td>
+    </tr><tr></tr>
+  </tbody>
+</table>
 
 ---
 ### 📝 License
