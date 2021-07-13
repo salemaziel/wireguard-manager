@@ -1448,7 +1448,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
           crontab -r
         fi
         # Completely remove coredns and the service.
-        if [ -f "${COREDNS_ROOT}" ]; then
+        if [ -d "${COREDNS_ROOT}" ]; then
           rm -rf ${COREDNS_ROOT}
           # Remove the coredns service from your system.
           if [ -f "${COREDNS_SERVICE_FILE}" ]; then
