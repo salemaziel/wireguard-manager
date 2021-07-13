@@ -1464,6 +1464,12 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
             chmod +x "${CURRENT_FILE_PATH}" || exit
           fi
         fi
+        # The block list should be updated.
+        if [ -f "${COREDNS_HOSTFILE}" ]; then
+          rm -f ${COREDNS_HOSTFILE}
+          curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
+          sed -i -e "s/^/0.0.0.0 /" ${COREDNS_HOSTFILE}
+        fi
         ;;
       10) # Backup WireGuard Config
         if [ -x "$(command -v wg)" ]; then
