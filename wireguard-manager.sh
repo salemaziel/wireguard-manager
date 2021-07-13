@@ -1054,8 +1054,8 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
     minimal
     reload
 }" >>${COREDNS_CONFIG}
-          curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
-          sed -i -e "s/^/0.0.0.0 /" ${COREDNS_HOSTFILE}
+            curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
+            sed -i -e "s/^/0.0.0.0 /" ${COREDNS_HOSTFILE}
           else
             echo ". {
     bind 127.0.0.1 ::1
@@ -1076,7 +1076,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
 }" >>${COREDNS_CONFIG}
           fi
           if [ ! -f "${COREDNS_SERVICE_FILE}" ]; then
-          echo "[Unit]
+            echo "[Unit]
 Description=CoreDNS DNS server
 After=network.target
 
@@ -1087,15 +1087,15 @@ Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target" >>${COREDNS_SERVICE_FILE}
-systemctl daemon-reload
-          if pgrep systemd-journal; then
-            systemctl enable coredns
-            systemctl start coredns
-          else
-            service coredns enable
-            service coredns start
+            systemctl daemon-reload
+            if pgrep systemd-journal; then
+              systemctl enable coredns
+              systemctl start coredns
+            else
+              service coredns enable
+              service coredns start
+            fi
           fi
-fi
           if [ -f "${RESOLV_CONFIG}" ]; then
             chattr -i ${RESOLV_CONFIG}
             mv ${RESOLV_CONFIG} ${RESOLV_CONFIG_OLD}
@@ -1446,6 +1446,14 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
         # Delete crontab
         if [ -x "$(command -v cron)" ]; then
           crontab -r
+        fi
+        # Completely remove coredns and the service.
+        if [ -f "${COREDNS_ROOT}" ]; then
+          rm -rf ${COREDNS_ROOT}
+          # Remove the coredns service from your system.
+          if [ -f "${COREDNS_SERVICE_FILE}" ]; then
+            rm -f ${COREDNS_SERVICE_FILE}
+          fi
         fi
         ;;
       9) # Update the script
