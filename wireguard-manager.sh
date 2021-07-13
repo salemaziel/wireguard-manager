@@ -1088,6 +1088,13 @@ Restart=on-failure
 [Install]
 WantedBy=multi-user.target" >>${COREDNS_SERVICE_FILE}
 systemctl daemon-reload
+          if pgrep systemd-journal; then
+            systemctl enable coredns
+            systemctl start coredns
+          else
+            service coredns enable
+            service coredns start
+          fi
 fi
           if [ -f "${RESOLV_CONFIG}" ]; then
             chattr -i ${RESOLV_CONFIG}
