@@ -823,7 +823,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       1)
         INSTALL_COREDNS="y"
         if [ "${INSTALL_COREDNS}" = "y" ]; then
-          read -rp "Do you want to ban advertisements using a block list? (y/n): " INSTALL_BLOCK_LIST
+          read -rp "Do you want to prevent advertisements, tracking, malware, and phishing using the content-blocker? (y/n):" INSTALL_BLOCK_LIST
         fi
         ;;
       2)
