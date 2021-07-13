@@ -27,18 +27,18 @@ dist-check
 
 # Pre-Checks system requirements
 function installing-system-requirements() {
-  if { [ "${DISTRO}" == "ubuntu" ] || [ "${DISTRO}" == "debian" ] || [ "${DISTRO}" == "raspbian" ] || [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "kali" ] || [ "${DISTRO}" == "linuxmint" ] || [ "${DISTRO}" == "fedora" ] || [ "${DISTRO}" == "centos" ] || [ "${DISTRO}" == "rhel" ] || [ "${DISTRO}" == "arch" ] || [ "${DISTRO}" == "archarm" ] || [ "${DISTRO}" == "manjaro" ] || [ "${DISTRO}" == "alpine" ] || [ "${DISTRO}" == "freebsd" ]; }; then
-    if { [ ! -x "$(command -v curl)" ] || [ ! -x "$(command -v iptables)" ] || [ ! -x "$(command -v bc)" ] || [ ! -x "$(command -v jq)" ] || [ ! -x "$(command -v cron)" ] || [ ! -x "$(command -v sed)" ] || [ ! -x "$(command -v zip)" ] || [ ! -x "$(command -v unzip)" ] || [ ! -x "$(command -v grep)" ] || [ ! -x "$(command -v awk)" ] || [ ! -x "$(command -v shuf)" ] || [ ! -x "$(command -v openssl)" ] || [ ! -x "$(command -v ntpd)" ]; }; then
-      if { [ "${DISTRO}" == "ubuntu" ] || [ "${DISTRO}" == "debian" ] || [ "${DISTRO}" == "raspbian" ] || [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "kali" ] || [ "${DISTRO}" == "linuxmint" ]; }; then
-        apt-get update && apt-get install iptables curl coreutils bc jq sed e2fsprogs zip unzip grep gawk iproute2 systemd openssl cron ntp -y
+  if { [ "${DISTRO}" == "ubuntu" ] || [ "${DISTRO}" == "debian" ] || [ "${DISTRO}" == "raspbian" ] || [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "kali" ] || [ "${DISTRO}" == "linuxmint" ] || [ "${DISTRO}" == "fedora" ] || [ "${DISTRO}" == "centos" ] || [ "${DISTRO}" == "rhel" ] || [ "${DISTRO}" == "arch" ] || [ "${DISTRO}" == "archarm" ] || [ "${DISTRO}" == "manjaro" ] || [ "${DISTRO}" == "alpine" ] || [ "${DISTRO}" == "freebsd" ] || [ "${DISTRO}" == "neon" ]; }; then
+    if { [ ! -x "$(command -v curl)" ] || [ ! -x "$(command -v iptables)" ] || [ ! -x "$(command -v bc)" ] || [ ! -x "$(command -v jq)" ] || [ ! -x "$(command -v cron)" ] || [ ! -x "$(command -v sed)" ] || [ ! -x "$(command -v zip)" ] || [ ! -x "$(command -v unzip)" ] || [ ! -x "$(command -v grep)" ] || [ ! -x "$(command -v awk)" ] || [ ! -x "$(command -v shuf)" ] || [ ! -x "$(command -v openssl)" ] || [ ! -x "$(command -v ntpd)" ] || [ ! -x "$(command -v lsof)" ]; }; then
+      if { [ "${DISTRO}" == "ubuntu" ] || [ "${DISTRO}" == "debian" ] || [ "${DISTRO}" == "raspbian" ] || [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "kali" ] || [ "${DISTRO}" == "linuxmint" ] || [ "${DISTRO}" == "neon" ]; }; then
+        apt-get update && apt-get install iptables curl coreutils bc jq sed e2fsprogs zip unzip grep gawk iproute2 systemd openssl cron ntp lsof -y
       elif { [ "${DISTRO}" == "fedora" ] || [ "${DISTRO}" == "centos" ] || [ "${DISTRO}" == "rhel" ]; }; then
-        yum update -y && yum install iptables curl coreutils bc jq sed e2fsprogs zip unzip grep gawk systemd openssl cron ntp -y
+        yum update -y && yum install iptables curl coreutils bc jq sed e2fsprogs zip unzip grep gawk systemd openssl cron ntp lsof -y
       elif { [ "${DISTRO}" == "arch" ] || [ "${DISTRO}" == "archarm" ] || [ "${DISTRO}" == "manjaro" ]; }; then
-        pacman -Syu --noconfirm --needed bc jq zip unzip cronie ntp
+        pacman -Syu --noconfirm --needed bc jq zip unzip cronie ntp lsof
       elif [ "${DISTRO}" == "alpine" ]; then
-        apk update && apk add iptables curl bc jq sed zip unzip grep gawk iproute2 systemd coreutils openssl cron ntp
+        apk update && apk add iptables curl bc jq sed zip unzip grep gawk iproute2 systemd coreutils openssl cron ntp lsof
       elif [ "${DISTRO}" == "freebsd" ]; then
-        pkg update && pkg install curl jq zip unzip gawk openssl cron ntp
+        pkg update && pkg install curl jq zip unzip gawk openssl cron ntp lsof
       fi
     fi
   else
@@ -70,7 +70,7 @@ virt-check
 function docker-check() {
   if [ -f /.dockerenv ]; then
     DOCKER_KERNEL_VERSION_LIMIT=5.6
-    DOCKER_KERNEL_CURRENT_VERSION=$(uname -r | cut -c1-3)
+    DOCKER_KERNEL_CURRENT_VERSION=$(uname -r | cut -d'.' -f1-2)
     if (($(echo "${DOCKER_KERNEL_CURRENT_VERSION} >= ${DOCKER_KERNEL_VERSION_LIMIT}" | bc -l))); then
       echo "Correct: Kernel ${DOCKER_KERNEL_CURRENT_VERSION} supported." >>/dev/null
     else
@@ -86,7 +86,7 @@ docker-check
 # Lets check the kernel version
 function kernel-check() {
   KERNEL_VERSION_LIMIT=3.1
-  KERNEL_CURRENT_VERSION=$(uname -r | cut -c1-3)
+  KERNEL_CURRENT_VERSION=$(uname -r | cut -d'.' -f1-2)
   if (($(echo "${KERNEL_CURRENT_VERSION} >= ${KERNEL_VERSION_LIMIT}" | bc -l))); then
     echo "Correct: Kernel ${KERNEL_CURRENT_VERSION} supported." >>/dev/null
   else
@@ -387,9 +387,17 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       case ${SERVER_HOST_V4_SETTINGS} in
       1)
         SERVER_HOST_V4="$(curl -4 -s 'https://api.ipengine.dev' | jq -r '.network.ip')"
+        if [ -z "${SERVER_HOST_V4}" ]; then
+          echo "Error: Curl unable to locate your server's public IP address."
+          exit
+        fi
         ;;
       2)
         SERVER_HOST_V4="$(ip route get 8.8.8.8 | grep src | sed 's/.*src \(.* \)/\1/g' | cut -f1 -d ' ')"
+        if [ -z "${SERVER_HOST_V4}" ]; then
+          echo "Error: IP unable to locate your server's public IP address."
+          exit
+        fi
         ;;
       3)
         read -rp "Custom IPv4: " -e -i "$(curl -4 -s 'https://api.ipengine.dev' | jq -r '.network.ip')" SERVER_HOST_V4
@@ -417,9 +425,17 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       case ${SERVER_HOST_V6_SETTINGS} in
       1)
         SERVER_HOST_V6="$(curl -6 -s 'https://api.ipengine.dev' | jq -r '.network.ip')"
+        if [ -z "${SERVER_HOST_V6}" ]; then
+          echo "Error: Curl unable to locate your server's public IP address."
+          exit
+        fi
         ;;
       2)
         SERVER_HOST_V6="$(ip -6 addr | sed -ne 's|^.* inet6 \([^/]*\)/.* scope global.*$|\1|p' | head -1)"
+        if [ -z "${SERVER_HOST_V6}" ]; then
+          echo "Error: IP unable to locate your server's public IP address."
+          exit
+        fi
         ;;
       3)
         read -rp "Custom IPv6: " -e -i "$(curl -6 -s 'https://api.ipengine.dev' | jq -r '.network.ip')" SERVER_HOST_V6
@@ -446,11 +462,16 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       case ${SERVER_PUB_NIC_SETTINGS} in
       1)
         SERVER_PUB_NIC="$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)"
+        if [ -z "${SERVER_PUB_NIC}" ]; then
+          echo "Error: Your server's public network interface could not be found."
+          exit
+        fi
         ;;
       2)
         read -rp "Custom NAT: " -e -i "$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)" SERVER_PUB_NIC
         if [ -z "${SERVER_PUB_NIC}" ]; then
           SERVER_PUB_NIC="$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)"
+          exit
         fi
         ;;
       esac
@@ -473,15 +494,27 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       case ${SERVER_PORT_SETTINGS} in
       1)
         SERVER_PORT="51820"
+        if [ "$(lsof -i UDP:"${SERVER_PORT}")" ]; then
+          echo "Error: Please use a different port because ${SERVER_PORT} is already in use."
+          exit
+        fi
         ;;
       2)
-        until [[ "${SERVER_PORT}" =~ ^[0-9]+$ ]] && [ "${SERVER_PORT}" -ge 1024 ] && [ "${SERVER_PORT}" -le 65535 ]; do
-          read -rp "Custom port [1024-65535]: " -e -i 51820 SERVER_PORT
+        until [[ "${SERVER_PORT}" =~ ^[0-9]+$ ]] && [ "${SERVER_PORT}" -ge 1 ] && [ "${SERVER_PORT}" -le 65535 ]; do
+          read -rp "Custom port [1-65535]: " -e -i 51820 SERVER_PORT
         done
+        if [ "$(lsof -i UDP:"${SERVER_PORT}")" ]; then
+          echo "Error: The port ${SERVER_PORT} is already used by a different application, please use a different port."
+          exit
+        fi
         ;;
       3)
         SERVER_PORT=$(shuf -i1024-65535 -n1)
-        echo "Random Port: ${SERVER_PORT}"
+        if [ "$(lsof -i UDP:"${SERVER_PORT}")" ]; then
+          SERVER_PORT=$(shuf -i1024-65535 -n1)
+        else
+          echo "Random Port: ${SERVER_PORT}"
+        fi
         ;;
       esac
     fi
@@ -496,7 +529,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
       echo "What do you want your keepalive interval to be?"
       echo "  1) 25 (Default)"
       echo "  2) Custom (Advanced)"
-      echo "  3) Random [1-65535]"
+      echo "  3) Random [1024-65535]"
       until [[ "${NAT_CHOICE_SETTINGS}" =~ ^[1-3]$ ]]; do
         read -rp "Nat Choice [1-3]: " -e -i 1 NAT_CHOICE_SETTINGS
       done
@@ -510,7 +543,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
         done
         ;;
       3)
-        NAT_CHOICE=$(shuf -i1-65535 -n1)
+        NAT_CHOICE=$(shuf -i1024-65535 -n1)
         ;;
       esac
     fi
@@ -879,9 +912,9 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
   function install-kernel-headers() {
     if { [ -f "${WIREGUARD_INTERFACE}" ] || [ -f "${WIREGUARD_PEER}" ]; }; then
       LINUX_HEADER_KERNEL_VERSION_LIMIT=5.6
-      LINUX_HEADER_KERNEL_CURRENT_VERSION=$(uname -r | cut -c1-3)
+      LINUX_HEADER_KERNEL_CURRENT_VERSION=$(uname -r | cut -d'.' -f1-2)
       if (($(echo "${LINUX_HEADER_KERNEL_CURRENT_VERSION} <= ${LINUX_HEADER_KERNEL_VERSION_LIMIT}" | bc -l))); then
-        if { [ "${DISTRO}" == "ubuntu" ] || [ "${DISTRO}" == "debian" ] || [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "kali" ] || [ "${DISTRO}" == "linuxmint" ]; }; then
+        if { [ "${DISTRO}" == "ubuntu" ] || [ "${DISTRO}" == "debian" ] || [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "kali" ] || [ "${DISTRO}" == "linuxmint" ] || [ "${DISTRO}" == "neon" ]; }; then
           apt-get update
           apt-get install linux-headers-"$(uname -r)" -y
         elif [ "${DISTRO}" == "raspbian" ]; then
@@ -918,7 +951,7 @@ if [ ! -f "${WIREGUARD_CONFIG}" ]; then
           add-apt-repository ppa:wireguard/wireguard -y
           apt-get update
           apt-get install wireguard qrencode haveged ifupdown resolvconf -y
-        elif { [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "linuxmint" ]; }; then
+        elif { [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "linuxmint" ] || [ "${DISTRO}" == "neon" ]; }; then
           apt-get update
           apt-get install wireguard qrencode haveged ifupdown resolvconf -y
         elif { [ "${DISTRO}" == "debian" ] || [ "${DISTRO}" == "kali" ]; }; then
@@ -1283,7 +1316,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
         fi
         ;;
       7) # Reinstall WireGuard
-        if { [ "${DISTRO}" == "ubuntu" ] || [ "${DISTRO}" == "debian" ] || [ "${DISTRO}" == "raspbian" ] || [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "kali" ] || [ "${DISTRO}" == "linuxmint" ]; }; then
+        if { [ "${DISTRO}" == "ubuntu" ] || [ "${DISTRO}" == "debian" ] || [ "${DISTRO}" == "raspbian" ] || [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "kali" ] || [ "${DISTRO}" == "linuxmint" ] || [ "${DISTRO}" == "neon" ]; }; then
           dpkg-reconfigure wireguard-dkms
           modprobe wireguard
           systemctl reenable wg-quick@${WIREGUARD_PUB_NIC}
@@ -1336,7 +1369,7 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
               if [ -f "/etc/apt/preferences.d/limit-unstable" ]; then
                 rm -f /etc/apt/preferences.d/limit-unstable
               fi
-            elif { [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "linuxmint" ]; }; then
+            elif { [ "${DISTRO}" == "pop" ] || [ "${DISTRO}" == "linuxmint" ] || [ "${DISTRO}" == "neon" ]; }; then
               apt-get remove --purge wireguard qrencode haveged -y
             elif [ "${DISTRO}" == "ubuntu" ]; then
               apt-get remove --purge wireguard qrencode haveged -y
@@ -1399,11 +1432,6 @@ PublicKey = ${SERVER_PUBKEY}" >>${WIREGUARD_CLIENT_PATH}/"${NEW_CLIENT_NAME}"-${
             curl -o "${CURRENT_FILE_PATH}" ${WIREGUARD_MANAGER_UPDATE}
             chmod +x "${CURRENT_FILE_PATH}" || exit
           fi
-        fi
-        # Update coredns list
-        if [ -f "${COREDNS_MANAGER}" ]; then
-          curl -o ${COREDNS_HOSTFILE} ${CONTENT_BLOCKER_URL}
-          sed -i -e 's/^/0.0.0.0 /' "${COREDNS_HOSTFILE}"
         fi
         ;;
       10) # Backup WireGuard Config
